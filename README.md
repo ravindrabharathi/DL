@@ -29,8 +29,11 @@ The modified file is at https://raw.githubusercontent.com/srbharathee/DL/master/
 We will add the following image augmentations
 
 1.Cutout/Random Eraser augmentation as defined in https://github.com/yu4u/cutout-random-erasing
+
 2. random horizontal flip ,
+
 3. random width_shift of .1
+
 4. random height_shift of 0.1
 
 After training the model for 100 epochs , we will do a prediction on the test dataset and get the first 50 misclassified images .
