@@ -53,7 +53,7 @@ import tensorflow as tf
 
 
 num_classes = 10
-custom_init=False
+custom_init=True
 
 # Model parameter
 # ----------------------------------------------------------------------------
