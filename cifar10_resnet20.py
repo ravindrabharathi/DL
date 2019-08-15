@@ -101,7 +101,7 @@ def resnet_layer(inputs,
                  strides=1,
                  activation='relu',
                  batch_normalization=True,
-                 conv_first=True):
+                 conv_first=True,wt_decay=1.25e-4):
     """2D Convolution-Batch Normalization-Activation stack builder
 
     # Arguments
@@ -125,7 +125,7 @@ def resnet_layer(inputs,
                   padding='same',
                   kernel_initializer=init_pytorch,  
                   #kernel_initializer='he_normal',
-                  kernel_regularizer=l2(5e-4))
+                  kernel_regularizer=l2(wt_decay))
 
     x = inputs
     if conv_first:
@@ -207,7 +207,7 @@ def resnet_v1(input_shape, depth, num_classes=10):
     x=Conv2D(10, 1, name='reducer1')(x)
     # Add classifier on top.
     # v1 does not use BN after last shortcut connection-ReLU
-    x = AveragePooling2D(pool_size=8)(x)
+    x = GlobalAveragePooling2D()(x)
     y = Flatten()(x)
     outputs = Activation('softmax')(y)
 
@@ -216,7 +216,7 @@ def resnet_v1(input_shape, depth, num_classes=10):
     return model
 
 
-def resnet_v2(input_shape, depth, num_classes=10):
+def resnet_v2(input_shape, depth, num_classes=10,wt_decay=1.25e-4,num_filters=16):
     """ResNet Version 2 Model builder [b]
 
     Stacks of (1 x 1)-(3 x 3)-(1 x 1) BN-ReLU-Conv2D or also known as
@@ -244,14 +244,14 @@ def resnet_v2(input_shape, depth, num_classes=10):
     if (depth - 2) % 9 != 0:
         raise ValueError('depth should be 9n+2 (eg 56 or 110 in [b])')
     # Start model definition.
-    num_filters_in = 16
+    num_filters_in = num_filters
     num_res_blocks = int((depth - 2) / 9)
 
     inputs = Input(shape=input_shape)
     # v2 performs Conv2D with BN-ReLU on input before splitting into 2 paths
     x = resnet_layer(inputs=inputs,
                      num_filters=num_filters_in,
-                     conv_first=True)
+                     conv_first=True,wt_decay=wt_decay)
 
     # Instantiate the stack of residual units
     for stage in range(3):
@@ -276,14 +276,14 @@ def resnet_v2(input_shape, depth, num_classes=10):
                              strides=strides,
                              activation=activation,
                              batch_normalization=batch_normalization,
-                             conv_first=False)
+                             conv_first=False,wt_decay=wt_decay)
             y = resnet_layer(inputs=y,
                              num_filters=num_filters_in,
-                             conv_first=False)
+                             conv_first=False,wt_decay=wt_decay)
             y = resnet_layer(inputs=y,
                              num_filters=num_filters_out,
                              kernel_size=1,
-                             conv_first=False)
+                             conv_first=False,wt_decay=wt_decay)
             if res_block == 0:
                 # linear projection residual shortcut connection to match
                 # changed dims
@@ -292,17 +292,19 @@ def resnet_v2(input_shape, depth, num_classes=10):
                                  kernel_size=1,
                                  strides=strides,
                                  activation=None,
-                                 batch_normalization=False)
+                                 batch_normalization=False,wt_decay=wt_decay)
             x = keras.layers.add([x, y])
 
         num_filters_in = num_filters_out
 
     # Add classifier on top.
     # v2 has BN-ReLU before Pooling
-    x = BatchNormalization()(x)
+    x = BatchNormalization(momentum=0.9, epsilon=1e-5)(x)
     x = Activation('relu')(x)
     # Reduce the number of channels to number of classes
-    x = Conv2D(10, 1, name='reducer1')(x)
+    x = Conv2D(10, 1, name='reducer1',kernel_initializer=init_pytorch,  
+                  #kernel_initializer='he_normal',
+                  kernel_regularizer=l2(wt_decay))(x)
     # Add classifier on top.
     # v1 does not use BN after last shortcut connection-ReLU
     x = GlobalAveragePooling2D()(x)
