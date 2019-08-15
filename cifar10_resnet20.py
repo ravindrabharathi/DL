@@ -120,7 +120,7 @@ def resnet_layer(inputs,
                   kernel_size=kernel_size,
                   strides=strides,
                   padding='same',
-                  kernel_initializer=init_pytorch,#kernel_initializer='he_normal',
+                  kernel_initializer=init_pytorch,  #kernel_initializer='he_normal',
                   kernel_regularizer=l2(5e-4))
 
     x = inputs
