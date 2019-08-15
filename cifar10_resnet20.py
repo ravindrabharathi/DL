@@ -53,7 +53,7 @@ import tensorflow as tf
 
 
 num_classes = 10
-
+custom_init=False
 
 # Model parameter
 # ----------------------------------------------------------------------------
@@ -118,13 +118,20 @@ def resnet_layer(inputs,
         x (tensor): tensor as input to the next layer
     """
     
-    
-    conv = Conv2D(num_filters,
+    if custom_init:
+        conv = Conv2D(num_filters,
                   kernel_size=kernel_size,
                   strides=strides,
                   padding='same',
                   kernel_initializer=init_pytorch,  
                   #kernel_initializer='he_normal',
+                  kernel_regularizer=l2(wt_decay))
+    else:
+        conv = Conv2D(num_filters,
+                  kernel_size=kernel_size,
+                  strides=strides,
+                  padding='same',
+                  kernel_initializer='he_normal',
                   kernel_regularizer=l2(wt_decay))
 
     x = inputs
