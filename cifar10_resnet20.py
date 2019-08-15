@@ -36,8 +36,8 @@ ResNet1001 v2|111|     - %|            95.08+-.14 %|  -
 from __future__ import print_function
 import keras
 from keras.layers import Dense, Conv2D, BatchNormalization, Activation
-from keras.layers import AveragePooling2D, Input, Flatten
-from keras.optimizers import Adam
+from keras.layers import AveragePooling2D, Input, Flatten,GlobalAveragePooling2D
+from keras.optimizers import Adam,SGD
 from keras.callbacks import ModelCheckpoint, LearningRateScheduler
 from keras.callbacks import ReduceLROnPlateau
 from keras.preprocessing.image import ImageDataGenerator
@@ -301,9 +301,9 @@ def resnet_v2(input_shape, depth, num_classes=10):
     x = Conv2D(10, 1, name='reducer1')(x)
     # Add classifier on top.
     # v1 does not use BN after last shortcut connection-ReLU
-    x = AveragePooling2D(pool_size=8)(x)
-    y = Flatten()(x)
-    outputs = Activation('softmax')(y)
+    x = GlobalAveragePooling2D()(x)
+    #y = Flatten()(x)
+    outputs = Activation('softmax')(x)
     
 
     # Instantiate model.
