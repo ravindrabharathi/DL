@@ -66,7 +66,7 @@ num_classes = 10
 # ResNet164 |27(18)| -----     | 94.07     | -----     | 94.54     | ---(---)
 # ResNet1001| (111)| -----     | 92.39     | -----     | 95.08+-.14| ---(---)
 # ---------------------------------------------------------------------------
-n = 3
+n = 1
 
 # Model version
 # Orig paper: version = 1 (ResNet v1), Improved ResNet: version = 2 (ResNet v2)
@@ -81,7 +81,14 @@ elif version == 2:
 # Model name, depth and version
 model_type = 'ResNet%dv%d' % (depth, version)
 
-
+def init_pytorch(shape, dtype=tf.float32, partition_info=None):
+  #print(shape[:-1])
+  fan = np.prod(shape[:-1])
+  #print(fan)
+  bound = 1 / math.sqrt(fan)
+  out=tf.random.uniform(shape, minval=-bound, maxval=bound, dtype=dtype)
+  #print(K.eval(out))
+  return out
 
 
 
@@ -107,23 +114,25 @@ def resnet_layer(inputs,
     # Returns
         x (tensor): tensor as input to the next layer
     """
+    
+    
     conv = Conv2D(num_filters,
                   kernel_size=kernel_size,
                   strides=strides,
                   padding='same',
-                  kernel_initializer='he_normal',
-                  kernel_regularizer=l2(1e-4))
+                  kernel_initializer=init_pytorch#kernel_initializer='he_normal',
+                  kernel_regularizer=l2(5e-4))
 
     x = inputs
     if conv_first:
         x = conv(x)
         if batch_normalization:
-            x = BatchNormalization()(x)
+            x = BatchNormalization(momentum=0.9, epsilon=1e-5)(x)
         if activation is not None:
             x = Activation(activation)(x)
     else:
         if batch_normalization:
-            x = BatchNormalization()(x)
+            x = BatchNormalization(momentum=0.9, epsilon=1e-5)(x)
         if activation is not None:
             x = Activation(activation)(x)
         x = conv(x)
