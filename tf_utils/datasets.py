@@ -1,5 +1,7 @@
 from uitils import *
 
+import psutil
+
 @timer
 def get_cpu_num():
   
